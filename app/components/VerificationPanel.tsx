@@ -33,9 +33,9 @@ export default function VerificationPanel({
         <button
           onClick={onVerifyIndividual}
           disabled={!canVerifyIndividual}
-          className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
+          className={`flex-1 px-4 py-2 rounded font-medium transition-all ${
             canVerifyIndividual
-              ? 'bg-orange-600 hover:bg-orange-700 text-white'
+              ? 'bg-orange-600 hover:bg-orange-700 hover:shadow-lg hover:shadow-orange-500/30 text-white cursor-pointer'
               : 'bg-gray-600 text-gray-400 cursor-not-allowed'
           }`}
         >
@@ -44,9 +44,9 @@ export default function VerificationPanel({
         <button
           onClick={onVerifyAggregated}
           disabled={!canVerifyAggregated}
-          className={`flex-1 px-4 py-2 rounded font-medium transition-colors ${
+          className={`flex-1 px-4 py-2 rounded font-medium transition-all ${
             canVerifyAggregated
-              ? 'bg-teal-600 hover:bg-teal-700 text-white'
+              ? 'bg-teal-600 hover:bg-teal-700 hover:shadow-lg hover:shadow-teal-500/30 text-white cursor-pointer'
               : 'bg-gray-600 text-gray-400 cursor-not-allowed'
           }`}
         >

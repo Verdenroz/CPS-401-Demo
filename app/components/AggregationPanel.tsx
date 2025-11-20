@@ -26,9 +26,9 @@ export default function AggregationPanel({
         <button
           onClick={onAggregate}
           disabled={!canAggregate}
-          className={`px-4 py-2 rounded font-medium transition-colors ${
+          className={`px-4 py-2 rounded font-medium transition-all ${
             canAggregate
-              ? 'bg-purple-600 hover:bg-purple-700 text-white'
+              ? 'bg-purple-600 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/30 text-white cursor-pointer'
               : 'bg-gray-600 text-gray-400 cursor-not-allowed'
           }`}
         >

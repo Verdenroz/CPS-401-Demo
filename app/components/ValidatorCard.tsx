@@ -26,16 +26,16 @@ export default function ValidatorCard({
         <div className="flex gap-2">
           <button
             onClick={onGenerateKey}
-            className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 text-white rounded transition-all cursor-pointer"
           >
             Generate Key
           </button>
           <button
             onClick={onSign}
             disabled={!canSign}
-            className={`px-3 py-1 text-sm rounded transition-colors ${
+            className={`px-3 py-1 text-sm rounded transition-all ${
               canSign
-                ? 'bg-green-600 hover:bg-green-700 text-white'
+                ? 'bg-green-600 hover:bg-green-700 hover:shadow-lg hover:shadow-green-500/30 text-white cursor-pointer'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >

@@ -365,7 +365,7 @@ export default function Home() {
             <div className="mt-4">
               <button
                 onClick={toggleBilinearity}
-                className="text-sm text-purple-400 hover:text-purple-300 underline"
+                className="text-sm text-purple-400 hover:text-purple-300 underline cursor-pointer"
               >
                 {showBilinearity ? 'Hide' : 'Show'} why bilinearity makes this work
               </button>
