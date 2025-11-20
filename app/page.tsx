@@ -18,8 +18,12 @@ import {
   verifySignature,
   aggregateSignatures,
   verifyAggregatedSignature,
+  verifyWithPairings,
+  verifyAggregatedWithPairings,
   measureTime,
+  truncateHex,
   KeyPair,
+  PairingResult,
 } from './lib/bls';
 
 interface Validator {
@@ -44,6 +48,8 @@ export default function Home() {
   const [aggregatedSignature, setAggregatedSignature] = useState<Uint8Array | null>(null);
   const [individualResults, setIndividualResults] = useState<VerificationResult[]>([]);
   const [aggregatedResult, setAggregatedResult] = useState<{ success: boolean; timeMs: number } | null>(null);
+  const [individualPairings, setIndividualPairings] = useState<{ validatorId: number; pairing: PairingResult }[]>([]);
+  const [aggregatedPairing, setAggregatedPairing] = useState<PairingResult | null>(null);
 
   // Math visualization state
   const [showKeyGenSteps, setShowKeyGenSteps] = useState(false);
@@ -131,6 +137,8 @@ export default function Home() {
     setAggregatedSignature(null);
     setIndividualResults([]);
     setAggregatedResult(null);
+    setIndividualPairings([]);
+    setAggregatedPairing(null);
     // Show key generation steps
     setShowKeyGenSteps(true);
     setKeyGenStep(0);
@@ -155,6 +163,8 @@ export default function Home() {
     setAggregatedSignature(null);
     setIndividualResults([]);
     setAggregatedResult(null);
+    setIndividualPairings([]);
+    setAggregatedPairing(null);
     // Show signing steps
     setShowSigningSteps(true);
     setSigningStep(0);
@@ -175,6 +185,8 @@ export default function Home() {
       setAggregatedSignature(aggregated);
       setIndividualResults([]);
       setAggregatedResult(null);
+      setIndividualPairings([]);
+      setAggregatedPairing(null);
       // Show aggregation steps
       setShowAggregationSteps(true);
       setAggregationStep(0);
@@ -188,6 +200,7 @@ export default function Home() {
 
   const handleVerifyIndividual = () => {
     const results: VerificationResult[] = [];
+    const pairings: { validatorId: number; pairing: PairingResult }[] = [];
 
     validators.forEach((v) => {
       if (v.keyPair && v.signature) {
@@ -199,10 +212,14 @@ export default function Home() {
           success: result,
           timeMs,
         });
+        // Compute pairing values for display
+        const pairingResult = verifyWithPairings(v.keyPair!.publicKey, message, v.signature!);
+        pairings.push({ validatorId: v.id, pairing: pairingResult });
       }
     });
 
     setIndividualResults(results);
+    setIndividualPairings(pairings);
     // Show individual verification steps
     setShowIndividualSteps(true);
     setIndividualStep(0);
@@ -224,7 +241,11 @@ export default function Home() {
       verifyAggregatedSignature(publicKeys, message, aggregatedSignature)
     );
 
+    // Compute pairing values for display
+    const pairingResult = verifyAggregatedWithPairings(publicKeys, message, aggregatedSignature);
+
     setAggregatedResult({ success: result, timeMs });
+    setAggregatedPairing(pairingResult);
     // Show verification steps
     setShowVerificationSteps(true);
     setVerificationStep(0);
@@ -272,6 +293,8 @@ export default function Home() {
               setAggregatedSignature(null);
               setIndividualResults([]);
               setAggregatedResult(null);
+              setIndividualPairings([]);
+              setAggregatedPairing(null);
               setShowKeyGenSteps(false);
               setShowSigningSteps(false);
               setShowAggregationSteps(false);
@@ -352,6 +375,31 @@ export default function Home() {
             isVisible={showIndividualSteps}
           />
 
+          {/* Individual Pairing Values */}
+          {individualPairings.length > 0 && (
+            <div className="mt-4 p-4 bg-gray-900 rounded-lg border border-orange-600">
+              <h4 className="text-md font-semibold text-orange-400 mb-3">Pairing Values</h4>
+              {individualPairings.map(({ validatorId, pairing }) => (
+                <div key={validatorId} className="mb-4 last:mb-0">
+                  <div className="text-sm text-gray-300 mb-2">Validator {validatorId}:</div>
+                  <div className="space-y-2 text-xs font-mono">
+                    <div>
+                      <span className="text-cyan-400">e(G₁, σ) = </span>
+                      <span className="text-gray-400 break-all">{truncateHex(pairing.lhs, 24)}</span>
+                    </div>
+                    <div>
+                      <span className="text-yellow-400">e(PK, H(M)) = </span>
+                      <span className="text-gray-400 break-all">{truncateHex(pairing.rhs, 24)}</span>
+                    </div>
+                    <div className={`font-bold ${pairing.equal ? 'text-green-400' : 'text-red-400'}`}>
+                      {pairing.equal ? '✓ Values match - Signature valid!' : '✗ Values differ - Invalid!'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Aggregated Verification Math Visualization */}
           <MathVisualization
             title="How Aggregated Verification Works"
@@ -359,6 +407,26 @@ export default function Home() {
             currentStep={verificationStep}
             isVisible={showVerificationSteps}
           />
+
+          {/* Aggregated Pairing Values */}
+          {aggregatedPairing && (
+            <div className="mt-4 p-4 bg-gray-900 rounded-lg border border-teal-600">
+              <h4 className="text-md font-semibold text-teal-400 mb-3">Pairing Values</h4>
+              <div className="space-y-2 text-xs font-mono">
+                <div>
+                  <span className="text-cyan-400">e(G₁, σ_agg) = </span>
+                  <span className="text-gray-400 break-all">{truncateHex(aggregatedPairing.lhs, 24)}</span>
+                </div>
+                <div>
+                  <span className="text-yellow-400">e(PK_agg, H(M)) = </span>
+                  <span className="text-gray-400 break-all">{truncateHex(aggregatedPairing.rhs, 24)}</span>
+                </div>
+                <div className={`font-bold ${aggregatedPairing.equal ? 'text-green-400' : 'text-red-400'}`}>
+                  {aggregatedPairing.equal ? '✓ Values match - Aggregated signature valid!' : '✗ Values differ - Invalid!'}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Bilinearity Deep Dive */}
           {showVerificationSteps && verificationStep >= VERIFICATION_STEPS.length && (

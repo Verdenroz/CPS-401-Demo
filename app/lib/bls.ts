@@ -3,6 +3,12 @@ import { bls12_381 as bls } from '@noble/curves/bls12-381.js';
 // Use longSignatures for Ethereum-style BLS (48-byte pubkeys in G₁, 96-byte sigs in G₂)
 const BLS = bls.longSignatures;
 
+// Access to curve primitives for pairing visualization
+const { pairing, fields } = bls;
+
+const G1Point = bls.G1.Point;
+const G2Point = bls.G2.Point;
+
 // Types
 export interface KeyPair {
   privateKey: Uint8Array;
@@ -65,6 +71,79 @@ export function verifyAggregatedSignature(
   const hashedMessage = BLS.hash(messageBytes);
   const aggregatedPubKey = BLS.aggregatePublicKeys(publicKeys);
   return BLS.verify(aggregatedSignature, hashedMessage, aggregatedPubKey);
+}
+
+// Pairing result interface for visualization
+export interface PairingResult {
+  lhs: string; // e(G₁, σ)
+  rhs: string; // e(PK, H(M))
+  equal: boolean;
+}
+
+// Compute and return pairing values for visualization
+export function verifyWithPairings(
+  publicKey: Uint8Array,
+  message: string,
+  signature: Uint8Array
+): PairingResult {
+  const messageBytes = new TextEncoder().encode(message);
+  const hashedMessage = BLS.hash(messageBytes);
+
+  // Parse points
+  const sigPoint = G2Point.fromBytes(signature);
+  const pkPoint = G1Point.fromBytes(publicKey);
+
+  // Compute pairings: e(G₁, σ) and e(PK, H(M))
+  const lhsPairing = pairing(G1Point.BASE, sigPoint);
+  const rhsPairing = pairing(pkPoint, hashedMessage);
+
+  // Convert Fp12 elements to hex for display (first coefficient)
+  const lhsHex = fp12ToHex(lhsPairing);
+  const rhsHex = fp12ToHex(rhsPairing);
+
+  return {
+    lhs: lhsHex,
+    rhs: rhsHex,
+    equal: lhsHex === rhsHex,
+  };
+}
+
+// Compute pairing values for aggregated verification
+export function verifyAggregatedWithPairings(
+  publicKeys: Uint8Array[],
+  message: string,
+  aggregatedSignature: Uint8Array
+): PairingResult {
+  const messageBytes = new TextEncoder().encode(message);
+  const hashedMessage = BLS.hash(messageBytes);
+
+  // Parse aggregated signature
+  const sigPoint = G2Point.fromBytes(aggregatedSignature);
+
+  // Aggregate public keys
+  const aggregatedPk = BLS.aggregatePublicKeys(publicKeys);
+  const pkPoint = G1Point.fromBytes(aggregatedPk.toBytes());
+
+  // Compute pairings
+  const lhsPairing = pairing(G1Point.BASE, sigPoint);
+  const rhsPairing = pairing(pkPoint, hashedMessage);
+
+  // Convert to hex
+  const lhsHex = fp12ToHex(lhsPairing);
+  const rhsHex = fp12ToHex(rhsPairing);
+
+  return {
+    lhs: lhsHex,
+    rhs: rhsHex,
+    equal: lhsHex === rhsHex,
+  };
+}
+
+// Convert Fp12 element to truncated hex string
+function fp12ToHex(fp12: typeof fields.Fp12.ONE): string {
+  // Fp12 is represented as coefficients, convert to bytes
+  const bytes = fields.Fp12.toBytes(fp12);
+  return bytesToHex(bytes);
 }
 
 // Measure execution time of a function

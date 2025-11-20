@@ -40,7 +40,7 @@ export default function MathVisualization({
           >
             <div className="flex items-start gap-3">
               <span
-                className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   index < currentStep
                     ? 'bg-green-600 text-white'
                     : index === currentStep
